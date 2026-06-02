@@ -1,72 +1,181 @@
+<p align="center">
+  <img src="screenshots\SQL PORTFOLIO THUMBNAIL.png" alt="SQL Analytics Portfolio Banner" width="100%" height="400">
+</p>
+
 # SQL Analytics Portfolio
 
-## Overview
-This repository contains a collection of SQL-based data analytics projects demonstrating end-to-end data extraction, transformation, and analysis skills.
+## 👋 About Me
 
-The projects focus on solving real-world business problems such as customer behavior analysis, performance tracking, operational reporting, and data-driven decision-making.
+Hi, I'm **Erastus Kaiba Njuguna**, a Data Analyst, Data Scientist, and Business Intelligence Professional with experience transforming raw data into actionable business insights.
 
-Each script is designed to work with structured relational databases and showcases advanced SQL techniques used in professional data analysis environments.
+This portfolio showcases SQL projects developed to solve real-world business challenges across customer analytics, performance monitoring, operational reporting, risk analytics, and decision support.
+
+The repository demonstrates my ability to extract, transform, analyze, and present data using industry-standard SQL techniques and analytical thinking.
 
 ---
 
-## Skills Demonstrated
-- SQL Query Development
-- Data Extraction & Transformation (ETL)
-- Joins (Inner, Left, Right, Full)
-- Subqueries & Nested Queries
+## 🚀 Portfolio Highlights
+
+✔ Advanced SQL Query Development
+
+✔ Data Extraction, Transformation & Validation
+
+✔ Business Performance Analytics
+
+✔ Customer Behavior Analysis
+
+✔ Risk & Portfolio Analytics
+
+✔ KPI Monitoring & Reporting
+
+✔ Data Quality Assessments
+
+✔ Operational Intelligence Solutions
+
+---
+
+## 🛠 Technical Skills Demonstrated
+
+### SQL Development
+- Complex Joins
+- Nested Queries
+- Correlated Subqueries
 - Common Table Expressions (CTEs)
-- Aggregations & Grouping
-- Window Functions (where applicable)
-- Data Cleaning & Validation
-- Analytical Reporting
+- Temporary Tables
+- Views
+
+### Analytical Techniques
+- Aggregations & Summarization
+- Trend Analysis
+- Cohort Analysis
+- Customer Segmentation
+- Performance Measurement
+- Exception Reporting
+
+### Data Engineering Concepts
+- ETL Logic
+- Data Validation
+- Data Quality Checks
+- Business Rule Implementation
+- Reporting Layer Development
 
 ---
 
-## Project Categories
+## 📊 Project Categories
 
-### 1. Customer Analytics
-- Customer segmentation queries
-- Product usage analysis
-- Customer activity tracking
-- Retention and engagement metrics
+### Customer Analytics
+Projects focused on understanding customer behavior, product adoption, engagement, and portfolio growth.
 
-### 2. Performance Analytics
-- KPI tracking queries
-- Trend analysis over time
-- Operational reporting views
-- Business unit performance summaries
-
-### 3. Transaction & Activity Analysis
-- Transaction pattern analysis
-- Frequency and volume reporting
-- Behavior trend detection
-- Anomaly detection queries
-
-### 4. Data Quality Checks
-- Duplicate detection
-- Missing value identification
-- Data consistency validation
+**Examples:**
+- Customer Segmentation
+- Salary Tracking Analytics
+- Product Uptake Analysis
+- Customer Activity Monitoring
 
 ---
 
-## Business Value
-These SQL solutions help organizations to:
-- Understand customer behavior
-- Track performance metrics
-- Identify trends and anomalies
-- Improve operational efficiency
-- Support data-driven decision-making
+### Performance Analytics
+Solutions developed to measure organizational and operational performance.
+
+**Examples:**
+- KPI Dashboards
+- Performance Tracking
+- Trend Analysis
+- Service Level Monitoring
 
 ---
 
-## Tools & Technologies
-- SQL (SQL Server / PostgreSQL / SQL Anywhere / MySQL)
+### Portfolio & Risk Analytics
+Projects supporting portfolio monitoring and risk assessment.
+
+**Examples:**
+- First Installment Default Analysis
+- Potential Downgrade Monitoring
+- Credit Portfolio Reviews
+- Exposure Tracking
+
+---
+
+### Operational Reporting
+Automated reporting solutions that improve business visibility and decision-making.
+
+**Examples:**
+- Snapshot Reporting
+- Transaction Monitoring
+- Monthly Performance Reports
+- Exception Reporting
+
+---
+
+### Data Quality & Validation
+SQL scripts used to identify and resolve data issues.
+
+**Examples:**
+- Duplicate Detection
+- Missing Data Analysis
+- Data Consistency Checks
+- Validation Reporting
+
+---
+
+## 📈 Business Impact
+
+These solutions help organizations:
+
+- Improve decision-making through data insights
+- Monitor business performance effectively
+- Identify operational inefficiencies
+- Detect emerging portfolio risks
+- Enhance customer understanding
+- Support strategic planning initiatives
+
+---
+
+## 💻 Tools & Technologies
+
+- SQL Server
+- PostgreSQL
+- SQL Anywhere
+- MySQL
 - DBeaver
-- Data Warehousing Concepts
-- Excel (for validation where needed)
+- Excel
+- Git & GitHub
 
 ---
 
-## Author
-**Erastus Kaiba Njuguna**  
-Data Analyst | Data Scientist | Business Intelligence Analyst
+## 📂 Repository Structure
+
+```text
+SQL-Analytics-Portfolio/
+│
+├── Customer Analytics
+├── Performance Analytics
+├── Portfolio & Risk Analytics
+├── Operational Reporting
+├── Data Quality Checks
+└── README.md
+```
+
+---
+
+## 🌍 Open to Remote Opportunities
+
+I am passionate about using data to drive business decisions and continuously expanding my expertise in analytics, data science, business intelligence, and AI-driven solutions.
+
+This portfolio represents practical SQL applications used to solve real-world analytical problems and demonstrates my ability to work across diverse business domains.
+
+---
+
+## 📫 Connect With Me
+
+**Erastus Kaiba Njuguna**
+
+📧 Email: erastusnjuguna24@gmail.com
+
+🔗 LinkedIn: linkedin.com/in/ekaiba
+
+💻 GitHub: https://github.com/KaiFa254
+
+---
+
+⭐ If you find this repository useful, feel free to star it.
