@@ -1,0 +1,6 @@
+SELECT CUST_MOB_PHONE,DATE_OF_BIRTH,*
+FROM
+DBCBA.KE_Customer_Master 
+WHERE EXTRACTION_DATE =(select max(processing_date) from dbcba.end_of_day)
+AND CUS_SHORT_NAME LIKE '%MWEGA%' 
+AND CUS_ACC_OFFICER ='4401'

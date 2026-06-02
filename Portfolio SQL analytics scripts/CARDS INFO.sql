@@ -1,0 +1,59 @@
+SELECT DISTINCT *,
+    cd.CARD_NUMBER,
+    cd.ACCOUNT_NUMBER as Prime_ACC,
+    al.ACCOUNT_TITLE_1,
+    cd.NAME,
+    cd.BANKACCOUNT,
+    al.CUSTOMER,
+    al.ACCOUNT_NUMBER,
+    cd.CURRENCY,
+    cd.CARD_STATUS ,
+    cd.CARD_TYPE,
+    cd.ISSUE_DATE,
+    cd.EXPIRY_DATE,
+    cd.CARD_STATUS,
+    cd.CARD_NUMBER_EXT,
+    al.ACCOUNT_BRANCH_NAME,
+    cm.ACCOUNT_OFFICER_NAME,
+    cm.CUSTOMER_BRANCH_NAME,
+    CASE 
+        WHEN cm.CUSTOMER_BRANCH_NAME IS NULL OR cm.CUSTOMER_BRANCH_NAME = '' 
+            THEN al.ACCOUNT_BRANCH_NAME
+        ELSE cm.CUSTOMER_BRANCH_NAME
+    END AS CUSTOMER_BRANCH
+FROM STGKE.STG_DEBIT_CREDIT_CARD  cd
+inner JOIN dbcba.KE_Accounts_List al
+    ON cd.BANKACCOUNT = al.ACCOUNT_NUMBER
+left JOIN dbcba.KE_Customer_Master cm 
+    ON al.CUSTOMER = cm.CUSTOMER_NUMBER
+    AND cm.EXTRACTION_DATE = (SELECT MAX(processing_date) FROM dbcba.end_of_day)
+WHERE EXTRACT_DATE = (SELECT MAX(processing_date) FROM dbcba.end_of_day)
+and cd.CARD_TYPE = 'CREDIT'
+
+
+
+--branch
+SELECT DISTINCT
+       cd.ACCOUNT_NUMBER as Prime_ACC,al.CUSTOMER,
+    CASE 
+        WHEN cm.CUSTOMER_BRANCH_NAME IS NULL OR cm.CUSTOMER_BRANCH_NAME = '' 
+            THEN al.ACCOUNT_BRANCH_NAME
+        ELSE cm.CUSTOMER_BRANCH_NAME
+    END AS CUSTOMER_BRANCH
+FROM STGKE.STG_DEBIT_CREDIT_CARD  cd
+inner JOIN dbcba.KE_Accounts_List al
+    ON cd.BANKACCOUNT = al.ACCOUNT_NUMBER
+left JOIN dbcba.KE_Customer_Master cm 
+    ON al.CUSTOMER = cm.CUSTOMER_NUMBER
+    AND cm.EXTRACTION_DATE = (SELECT MAX(processing_date) FROM dbcba.end_of_day)
+WHERE EXTRACT_DATE = (SELECT MAX(processing_date) FROM dbcba.end_of_day)
+
+
+
+SELECT DISTINCT cd.ACCOUNT_NUMBER as Prime_ACC, al.CUSTOMER
+FROM STGKE.STG_DEBIT_CREDIT_CARD  cd
+inner JOIN dbcba.KE_Accounts_List al 
+ON cd.BANKACCOUNT = al.ACCOUNT_NUMBER
+
+ 
+

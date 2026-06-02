@@ -1,0 +1,29 @@
+SELECT 
+    cm.CUS_SHORT_NAME,
+    cm.CUSTOMER_NUMBER,
+    cm.CLASSIFICATION,
+    CASE 
+        WHEN cm.BUSINESS_SEGMENT IN ('270', '250') THEN 'CONSUMER BANKING'
+        WHEN cm.BUSINESS_SEGMENT = '200' THEN 'COMMERCIAL & BUSINESS BANKING'
+    END AS BUSINESS_UNIT,
+    cm.SUB_SEGEMENT_DESC,
+    cm.CUSTOMER_BRANCH_NAME,
+  cm.CUS_ACC_OFFICER ,
+    cm.ACCOUNT_OFFICER_NAME,
+        cm.CUST_EMAIL_ID,
+        cm.CUST_MOB_PHONE,
+        cm.CUST_OFF_PHONE ,
+        cm.TOWN_COUNTRY
+FROM 
+    dbcba.KE_Customer_Master cm
+WHERE 
+    cm.EXTRACTION_DATE = (
+        SELECT MAX(processing_date) 
+        FROM dbcba.end_of_day
+    )
+    and cm.CUSTOMER_BRANCH in ('106','1290')
+    AND cm.BUSINESS_SEGMENT IN ('270', '250')
+    AND CM.SUB_SEGEMENT IN ('860', '770')
+    AND cm.CLASSIFICATION <> 'B20';
+
+   

@@ -1,0 +1,138 @@
+/* =========================================================
+   1️⃣ SNAPSHOT DATES
+========================================================= */
+WITH SnapshotDates(SNAPSHOT_DATE) AS (
+    SELECT CAST('2025-06-30' AS DATE) UNION ALL
+    SELECT CAST('2025-07-31' AS DATE) UNION ALL
+    SELECT CAST('2025-08-31' AS DATE) UNION ALL
+    SELECT CAST('2025-09-30' AS DATE) UNION ALL
+    SELECT CAST('2025-10-31' AS DATE) UNION ALL
+    SELECT CAST('2025-11-30' AS DATE)
+),
+/* =========================================================
+   2️⃣ TRANSACTIONS WITH SNAPSHOT DATE
+========================================================= */
+transactions AS (
+    SELECT
+        t.BOOKING_DATE,
+        t.CUSTOMER_ID,
+        t.ACCOUNT_NUMBER,
+        (CAST(t.AMOUNT_LCY AS DECIMAL(18,2)) * -1) AS AMOUNT_LCY_1,
+        s.SNAPSHOT_DATE
+    FROM dbcba.KE_ACCOUNT_TRANSACTIONS t
+    CROSS JOIN SnapshotDates s
+    WHERE t.BOOKING_DATE <= s.SNAPSHOT_DATE
+      AND t.BOOKING_DATE >= DATEADD(MONTH, -12, DATEADD(DAY, 1-DAY(s.SNAPSHOT_DATE), s.SNAPSHOT_DATE))
+      AND t.AMOUNT_LCY < 0
+      AND (t.DEBIT_CUSTOMER <> t.CREDIT_CUSTOMER OR t.CREDIT_CUSTOMER IS NULL)
+      AND t.TRANSACTION_CODE NOT IN ('433','234','938','939','940','941','991','992')
+      AND t.REVERSAL_MARKER <> 'R'
+),
+
+/* =========================================================
+   3️⃣ ACCOUNT TRANSACTIONS WITH CUSTOMER INFO
+========================================================= */
+account_transactions AS (
+    SELECT
+        acc.CUSTOMER AS CUSTOMER_ID,
+        cm.CUS_NAME_1,
+        cm.CUSTOMER_BRANCH_NAME,
+        cm.CUS_ACC_OFFICER,
+        cm.ACCOUNT_OFFICER_NAME,
+        cm.BUSINESS_SEGMENT_DESC,
+        cm.SUB_SEGEMENT_DESC,
+        acc.ACCOUNT_NUMBER,
+        acc.CATEGORY,
+        tr.BOOKING_DATE,
+        tr.AMOUNT_LCY_1,
+        tr.SNAPSHOT_DATE
+    FROM dbcba.KE_Accounts_Master acc
+    LEFT JOIN dbcba.KE_Customer_Master cm 
+        ON acc.CUSTOMER = cm.CUSTOMER_NUMBER 
+        AND cm.EXTRACTION_DATE = acc.EXTRACTION_DATE
+    LEFT JOIN transactions tr
+        ON tr.ACCOUNT_NUMBER = acc.ACCOUNT_NUMBER
+    WHERE (acc.PRODUCT_LINE = 'ACCOUNTS' OR acc.PRODUCT_LINE IS NULL)
+      AND cm.BUSINESS_SEGMENT_DESC IN ('250','270')
+),
+
+/* =========================================================
+   4️⃣ DEBITS AGGREGATION BY MONTH
+========================================================= */
+debits AS (
+    SELECT 
+        CUSTOMER_ID,
+        CUS_NAME_1,
+        CUSTOMER_BRANCH_NAME,
+        CUS_ACC_OFFICER,
+        ACCOUNT_OFFICER_NAME,
+        BUSINESS_SEGMENT_DESC,
+        SUB_SEGEMENT_DESC,
+        SNAPSHOT_DATE,
+        SUM(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 0 THEN AMOUNT_LCY_1 ELSE 0 END) AS Month_1_DTO,
+        SUM(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 1 THEN AMOUNT_LCY_1 ELSE 0 END) AS Month_2_DTO,
+        SUM(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 2 THEN AMOUNT_LCY_1 ELSE 0 END) AS Month_3_DTO,
+        SUM(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 3 THEN AMOUNT_LCY_1 ELSE 0 END) AS Month_4_DTO,
+        SUM(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 4 THEN AMOUNT_LCY_1 ELSE 0 END) AS Month_5_DTO,
+        SUM(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 5 THEN AMOUNT_LCY_1 ELSE 0 END) AS Month_6_DTO,
+        SUM(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 6 THEN AMOUNT_LCY_1 ELSE 0 END) AS Month_7_DTO,
+        SUM(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 7 THEN AMOUNT_LCY_1 ELSE 0 END) AS Month_8_DTO,
+        SUM(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 8 THEN AMOUNT_LCY_1 ELSE 0 END) AS Month_9_DTO,
+        SUM(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 9 THEN AMOUNT_LCY_1 ELSE 0 END) AS Month_10_DTO,
+        SUM(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 10 THEN AMOUNT_LCY_1 ELSE 0 END) AS Month_11_DTO,
+        SUM(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 11 THEN AMOUNT_LCY_1 ELSE 0 END) AS Month_12_DTO
+    FROM account_transactions
+    GROUP BY CUSTOMER_ID, CUS_NAME_1, CUSTOMER_BRANCH_NAME, CUS_ACC_OFFICER,
+             ACCOUNT_OFFICER_NAME, BUSINESS_SEGMENT_DESC, SUB_SEGEMENT_DESC, SNAPSHOT_DATE
+),
+
+/* =========================================================
+   5️⃣ COUNTS BY MONTH
+========================================================= */
+counts AS (
+    SELECT
+        CUSTOMER_ID,
+        SNAPSHOT_DATE,
+        COUNT(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 0 THEN CUSTOMER_ID END) AS Month_1_DTO_Counts,
+        COUNT(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 1 THEN CUSTOMER_ID END) AS Month_2_DTO_Counts,
+        COUNT(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 2 THEN CUSTOMER_ID END) AS Month_3_DTO_Counts,
+        COUNT(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 3 THEN CUSTOMER_ID END) AS Month_4_DTO_Counts,
+        COUNT(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 4 THEN CUSTOMER_ID END) AS Month_5_DTO_Counts,
+        COUNT(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 5 THEN CUSTOMER_ID END) AS Month_6_DTO_Counts,
+        COUNT(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 6 THEN CUSTOMER_ID END) AS Month_7_DTO_Counts,
+        COUNT(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 7 THEN CUSTOMER_ID END) AS Month_8_DTO_Counts,
+        COUNT(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 8 THEN CUSTOMER_ID END) AS Month_9_DTO_Counts,
+        COUNT(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 9 THEN CUSTOMER_ID END) AS Month_10_DTO_Counts,
+        COUNT(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 10 THEN CUSTOMER_ID END) AS Month_11_DTO_Counts,
+        COUNT(CASE WHEN DATEDIFF(MONTH, BOOKING_DATE, SNAPSHOT_DATE) = 11 THEN CUSTOMER_ID END) AS Month_12_DTO_Counts
+    FROM account_transactions
+    GROUP BY CUSTOMER_ID, SNAPSHOT_DATE
+),
+
+/* =========================================================
+   6️⃣ FINAL MERGE
+========================================================= */
+Q_debits AS (
+    SELECT 
+        d.*,
+        c.Month_1_DTO_Counts,
+        c.Month_2_DTO_Counts,
+        c.Month_3_DTO_Counts,
+        c.Month_4_DTO_Counts,
+        c.Month_5_DTO_Counts,
+        c.Month_6_DTO_Counts,
+        c.Month_7_DTO_Counts,
+        c.Month_8_DTO_Counts,
+        c.Month_9_DTO_Counts,
+        c.Month_10_DTO_Counts,
+        c.Month_11_DTO_Counts,
+        c.Month_12_DTO_Counts
+    FROM debits d
+    LEFT JOIN counts c
+        ON d.CUSTOMER_ID = c.CUSTOMER_ID
+       AND d.SNAPSHOT_DATE = c.SNAPSHOT_DATE
+)
+
+SELECT *
+FROM Q_debits
+ORDER BY CUSTOMER_ID, SNAPSHOT_DATE;

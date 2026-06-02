@@ -1,0 +1,31 @@
+WITH ODS AS 
+(
+    SELECT 
+        EXTRACTION_DATE, 
+        CAST(MONTH(EXTRACTION_DATE) AS VARCHAR) || '-' || CAST(YEAR(EXTRACTION_DATE) AS VARCHAR) AS Month_year,
+        CUSTOMER, 
+        ARREARS_KES, 
+        OD_DAYS
+    FROM 
+        SVUPHSIQDBPR.STGKE.STG_AA_BILL_ARREARS A
+    WHERE A.EXTRACTION_DATE BETWEEN '2024-12-01' AND '2025-06-17'
+   )
+
+SELECT
+    CUSTOMER,
+    MAX(CASE WHEN Month_year = '3-2025'  THEN OD_DAYS ELSE 0 END) AS Max_OD_Days_Mar_2025,
+    MAX(CASE WHEN Month_year = '4-2025'  THEN OD_DAYS ELSE 0 END) AS Max_OD_Days_Apr_2025,
+    MAX(CASE WHEN Month_year = '5-2025'  THEN OD_DAYS ELSE 0 END) AS Max_OD_Days_May_2025,
+    MAX(CASE WHEN Month_year = '6-2025'  THEN OD_DAYS ELSE 0 END) AS Max_OD_Days_Jun_2025,
+
+    CASE 
+        WHEN 
+       			MAX(CASE WHEN Month_year = '3-2025'  THEN OD_DAYS ELSE 0 END) > 1 OR
+             	MAX(CASE WHEN Month_year = '4-2025'  THEN OD_DAYS ELSE 0 END) > 1 OR
+             	MAX(CASE WHEN Month_year = '5-2025'  THEN OD_DAYS ELSE 0 END) > 1 OR
+             	MAX(CASE WHEN Month_year = '6-2025'  THEN OD_DAYS ELSE 0 END) > 1 
+        THEN 'Yes'
+        ELSE 'No'
+    END AS Any_Month_Above_1DPD
+FROM ODS
+GROUP BY CUSTOMER;

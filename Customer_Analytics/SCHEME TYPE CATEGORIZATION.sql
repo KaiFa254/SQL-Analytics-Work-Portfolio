@@ -1,0 +1,129 @@
+----------------------------------------------------------
+
+WITH SCHEMETYPE_TABLE AS 
+(
+    SELECT 
+        CUSTOMER,
+        SCHEME_INS_PART,
+        SCHEME_NUMBER,
+        NIC_SCHEMES,
+        CASE 
+            WHEN NIC_SCHEMES  <> '' THEN NIC_SCHEMES  
+            ELSE SCHEME_INS_PART
+        END AS SCHEME_ID
+    FROM dbcba.KE_Accounts_List
+)
+SELECT distinct
+    CUSTOMER,
+    SCHEME_ID,
+    SCHEME_NUMBER,
+    CASE
+         WHEN (SCHEME_ID = '' OR SCHEME_ID is null or LOWER(TRIM(SCHEME_ID)) LIKE 'a%' or LOWER(TRIM(SCHEME_NUMBER)) ='10' or LOWER(TRIM(SCHEME_NUMBER)) ='20') 
+        THEN 'non-scheme' 
+        WHEN (LOWER(TRIM(SCHEME_NUMBER)) ='40'  OR LOWER(TRIM(SCHEME_ID))='767898')
+        THEN 'Exits' 
+        WHEN (LOWER(TRIM(SCHEME_NUMBER)) ='5' OR LOWER(TRIM(SCHEME_ID)) LIKE 's%')
+        THEN 'scheme'
+        ELSE 'non-scheme'
+    END AS SCHEME_TYPE
+FROM SCHEMETYPE_TABLE
+where (SCHEME_ID is not null and SCHEME_ID <> '')
+ORDER BY SCHEME_ID DESC
+
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+
+WITH raw_loans AS 
+(
+SELECT
+	DISTINCT(A.ACCOUNT_NUMBER) ACCOUNT_NUMBER,
+	CAST(A.ARR_START_DATE AS DATE) ARR_START_DATE,
+	A.CUSTOMER,
+	A.ARR_PRODUCT_STATUS,
+	A.TERM_AMOUNT,
+			(CASE
+		WHEN A.ACCOUNT_NUMBER = D.ACCOUNT_NUMBER THEN D.EXPOSURE_KES
+		ELSE A.ONLINE_ACTUAL_BAL *-1
+	END ) AS EXPOSURE_ACTUAL,
+	A.SCHEME_INS_PART,
+	A.NIC_SCHEMES,
+	CASE WHEN A.SCHEME_INS_PART <>'' then A.SCHEME_INS_PART else A.NIC_SCHEMES end as SCHEME_ID
+	FROM
+	DBCBA.KE_ACCOUNTS_LIST A
+LEFT JOIN DBCBA.KE_CUSTOMER_MASTER B ON
+	A.CUSTOMER = B.CUSTOMER_NUMBER
+LEFT JOIN STGKE.STG_AA_ARREARS C ON
+	A.ACCOUNT_NUMBER = C.ACCOUNT_NUMBER
+	AND C.EXTRACTION_DATE = B.EXTRACTION_DATE
+LEFT JOIN STGKE.STG_AA_BILL_ARREARS D ON
+	A.ARRANGEMENT_ID = D.ARRANGEMENT_ID
+	AND D.EXTRACTION_DATE = (SELECT MAX(EXTRACTION_DATE) FROM STGKE.STG_AA_BILL_ARREARS)
+WHERE
+	B.EXTRACTION_DATE = (SELECT MAX(EXTRACTION_DATE) FROM DBCBA.KE_CUSTOMER_MASTER)
+	AND 
+A.ARR_STATUS IN ('CURRENT')
+	AND
+A.PRODUCT_LINE IN ('LENDING')
+AND 	(CASE
+		WHEN A.ACCOUNT_NUMBER = D.ACCOUNT_NUMBER THEN D.EXPOSURE_KES
+		ELSE A.ONLINE_ACTUAL_BAL *-1
+	END ) >0
+)
+SELECT 
+	raw_loans.CUSTOMER,
+	SUM(raw_loans.REPAYMENT_AMT) AS EMI,
+	CASE
+        WHEN (raw_loans.SCHEME_ID = '' OR raw_loans.SCHEME_ID = '767898' or LOWER(TRIM(raw_loans.SCHEME_ID)) LIKE 'a%') THEN 'non-scheme' 
+        ELSE 'scheme'
+    END AS SCHEME_CATEGORY
+FROM raw_loans
+WHERE 
+raw_loans.EXPOSURE_ACTUAL > 0
+GROUP BY raw_loans.CUSTOMER, 
+CASE
+        WHEN (raw_loans.SCHEME_ID = '' OR raw_loans.SCHEME_ID = '767898' or LOWER(TRIM(raw_loans.SCHEME_ID)) LIKE 'a%') THEN 'non-scheme' 
+        ELSE 'scheme'
+    END;
+
+
+----------------------------------------------------------
+
+WITH SCHEMETYPE_TABLE AS 
+(
+    SELECT 
+        CUSTOMER,
+        SCHEME_INS_PART,
+        SCHEME_NUMBER,
+        NIC_SCHEMES,
+        CASE 
+            WHEN NIC_SCHEMES  <> '' THEN NIC_SCHEMES  
+            ELSE SCHEME_INS_PART
+        END AS SCHEME_ID
+    FROM dbcba.KE_Accounts_List
+)
+SELECT distinct
+    CUSTOMER,
+    SCHEME_ID,
+    SCHEME_NUMBER,
+    CASE
+         WHEN (SCHEME_ID = '' OR SCHEME_ID is null  or LOWER(TRIM(SCHEME_NUMBER)) ='10' or LOWER(TRIM(SCHEME_NUMBER)) ='20') 
+        THEN 'non-scheme' 
+        WHEN LOWER(TRIM(SCHEME_ID)) LIKE 'a%' 
+        THEN 'Approved' 
+          WHEN (LOWER(TRIM(SCHEME_NUMBER)) ='40'  OR LOWER(TRIM(SCHEME_ID))='767898')
+        THEN 'Exits' 
+        WHEN (LOWER(TRIM(SCHEME_NUMBER)) ='5' OR LOWER(TRIM(SCHEME_ID)) LIKE 's%')
+        THEN 'scheme'
+        ELSE 'non-scheme'
+    END AS SCHEME_TYPE
+FROM SCHEMETYPE_TABLE
+where (SCHEME_ID is not null and SCHEME_ID <> '')
+ORDER BY SCHEME_ID DESC
+
+
+select distinct SCHEME_NUMBER---top 3*
+ FROM dbcba.KE_Accounts_List
+
+
+ 

@@ -1,0 +1,67 @@
+SELECT   DISTINCT  a.BILL_REFERENCE,
+       a.ARRANGEMENT_ID,
+       b.CUSTOMER,
+       b.account_number as ACCOUNT_NUMBER,
+       case when stl.PAYOUT_ACCOUNT is null or stl.PAYOUT_ACCOUNT='' then stl.PAYIN_ACCOUNT else stl.PAYOUT_ACCOUNT end as SETTLEMENT_ACCOUNT,
+      CAST(a.PAYMENT_DATE AS DATE) 'PAYMENT_DATE',
+      SETTLED_DATE,
+      A.SETTLE_STATUS ,
+      A.BILL_TYPE,
+       a.CURRENCY,
+       EFFECTIVE_RATE,
+       MONTH(CAST( a.PAYMENT_DATE AS DATE))AS MONTH,
+          YEAR(CAST( a.PAYMENT_DATE AS DATE))AS PAYMENT_YEAR,
+      TOTAL_BILLED,
+       CONVERT(DECIMAL(18, 2), a.NEW_OR_PR_AMT) AS 'Principal amount ACTUAL ',
+         case when  b.CURRENCY = 'KES' then  CONVERT(DECIMAL(18, 2), a.NEW_OR_PR_AMT)
+    else   CONVERT(DECIMAL(18, 2), a.NEW_OR_PR_AMT) *b.EXCHANGE_RATE end    AS 'Principal amount KES ' ,
+    
+         CONVERT(DECIMAL(18, 2),  a.NEW_PRINCIPALINT) AS 'Principal Interest ACTUAL',
+          case when  b.CURRENCY = 'KES' then     CONVERT(DECIMAL(18, 2),  a.NEW_PRINCIPALINT)
+    else      CONVERT(DECIMAL(18, 2),  a.NEW_PRINCIPALINT)*b.EXCHANGE_RATE end    AS 'Principal Interest KES ' ,
+    
+     CONVERT(DECIMAL(18, 2),   a.PENALTYINT) AS 'Penalty interest ACTUAL',
+     
+       case when  b.CURRENCY = 'KES' then      CONVERT(DECIMAL(18, 2),   a.PENALTYINT)
+    else    CONVERT(DECIMAL(18, 2),   a.PENALTYINT) *b.EXCHANGE_RATE end    AS 'Penalty interest KES '
+    ,case when  b.CURRENCY = 'KES' then CTE.DEAL_BALANCE
+else  CTE.DEAL_BALANCE*b.EXCHANGE_RATE end   as EXPOSURE_KES ,
+CTE.DEAL_BALANCE  as  EXPOSURE_ACTUAL ,
+case when b.CURRENCY = 'KES' then b.TERM_AMOUNT
+else b.TERM_AMOUNT*b.EXCHANGE_RATE end as DISBURSED_KES
+,OPENING_DATE AS 'ACCOUNT_OPEN_DATE'
+       ,MATURITY_DATE AS 'LOAN_MATURITY_DATE'
+       ,cast(b.REPAYMENT_AMT as double) as EMI_ACTUAL
+       ,C.CUSTOMER_BRANCH,C.CUSTOMER_BRANCH_NAME
+       --,b.ACCOUNT_BRANCH,ACCOUNT_BRANCH_NAME
+       ,c.CUS_ACC_OFFICER as ACCOUNT_OFFICER_CODE,c.ACCOUNT_OFFICER_NAME
+       ,c.SUB_SEGEMENT,c.SUB_SEGEMENT_DESC,c.BUSINESS_SEGMENT,c.BUSINESS_SEGMENT_DESC
+    ,e.total_CREDITS as SOW_CREDITS
+     FROM STGKE.AA_BILL_DETAILS_NEW A
+     LEFT  join  dbcba.ke_accounts_master b on a.ARRANGEMENT_ID = b.ARRANGEMENT_ID and b.EXTRACTION_DATE ='2024-10-16'
+     inner join  dbcba.ke_customer_master c on b.CUSTOMER=c.customer_number and C.EXTRACTION_DATE ='2024-10-16'
+     left join (  select  CUSTOMER_NUMBER, SUM(total_credits) as TOTAL_CREDITS   from stgke.STG_SOW_TOTAL_CREDITS where-- CUSTOMER_NUMBER ='523777' and
+      TXN_YEAR_MONTH ='2024-7'
+group by CUSTOMER_NUMBER) e on  e.CUSTOMER_NUMBER=b.CUSTOMER
+     --stgke.STG_SOW_TOTAL_CREDITS e on e.CUSTOMER_NUMBER=b.CUSTOMER  and TXN_YEAR_MONTH ='2024-7'
+LEFT   join  stgke.STG_ECB_TOTAL_EXPOSURE CTE  on CTE.RECID  =b.ACCOUNT_NUMBER  and EXPOSURE_KES >0  and load_date ='2024-10-16'
+left join stgke.STG_AA_ARR_SETTLEMENT stl on a.ARRANGEMENT_ID=stl.id_comp_1
+left join STGKE.STG_AA_ARR_INTEREST d on d.ID_COMP_1=a.ARRANGEMENT_ID
+WHERE  [MONTH]=7 and PAYMENT_YEAR=2024 --and BILL_REFERENCE ='AABILL242077JCKS'
+AND CUSTOMER ='846707'
+
+
+
+select top 20*
+from
+dbcba.KE_Accounts_List am
+    WHERE  
+        am.PRODUCT_LINE = 'LENDING' 
+        AND am.ARR_STATUS IN ('CURRENT', 'EXPIRED') 
+        AND am.ONLINE_ACTUAL_BAL <= 0
+        and am.ARR_STATUS<>'AUTH'
+        
+  SELECT DISTINCT  Fixed_Variable_Ind
+  from
+dbcba.KE_Accounts_List am
+WHERE CUSTOMER in ('256992')

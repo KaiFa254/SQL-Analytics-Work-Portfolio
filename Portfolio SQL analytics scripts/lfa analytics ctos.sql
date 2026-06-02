@@ -1,0 +1,117 @@
+WITH transactions AS (
+SELECT
+    BOOKING_DATE,
+    CUSTOMER_ID,
+    ACCOUNT_NUMBER,
+    AMOUNT_LCY,
+    CURRENCY
+FROM
+    dbcba.KE_ACCOUNT_TRANSACTIONS
+WHERE
+    BOOKING_DATE <= DATEADD(DAY, -(DAY(GETDATE())), CAST(GETDATE() AS DATE))  -- Current day of the month --removes the days of incomplete current month
+    AND BOOKING_DATE >= DATEADD(MONTH, -12, DATEADD(DAY, -(DAY(GETDATE()) - 1), CAST(GETDATE() AS DATE))) -- One year back, minus current day minus 1
+    AND AMOUNT_LCY > 0
+    AND txn_code_initiation = 'CUSTOMER'
+        and (CREDIT_CUSTOMER <> DEBIT_CUSTOMER 
+     OR (CREDIT_CUSTOMER IS NULL OR CREDIT_CUSTOMER = '')
+     OR (DEBIT_CUSTOMER IS NULL OR DEBIT_CUSTOMER = ''))
+and (substring(ACCOUNT_NUMBER,1,6) <> substring(DEBIT_ACCOUNT ,1,6))
+ and (CUSTOMER_ID <> DEBIT_CUSTOMER 
+     OR (CUSTOMER_ID IS NULL OR CUSTOMER_ID = '')
+     OR (DEBIT_CUSTOMER IS NULL OR DEBIT_CUSTOMER = ''))
+    AND TRANSACTION_CODE NOT IN ('1001', '944', '945', '766','949','991','941','433','1006','85','234',
+    '859','940','992','947','939','946','948','938', '1085')
+    AND REVERSAL_MARKER <> 'R'
+    --AND CUSTOMER_ID IN ('658407', '429262')
+--ORDER BY BOOKING_DATE DESC
+
+),
+account_transactions AS (
+    SELECT
+        cm.LEGAL_IDNO,
+        acc.CUSTOMER,
+        acc.Account_number AS ACCOUNT_NUMBER,
+        acc.category,
+        cto.BOOKING_DATE,
+        cto.AMOUNT_LCY
+        --RANK() OVER (PARTITION BY acc.CUSTOMER ORDER BY acc.OPENING_DATE ASC) AS rank_opening_date --Ranks the account opening dates ASC
+    FROM
+        dbcba.ke_Accounts_master acc
+    LEFT JOIN dbcba.ke_Customer_master cm 
+        ON acc.customer = cm.Customer_number 
+        AND cm.EXTRACTION_DATE = acc.EXTRACTION_DATE
+    LEFT JOIN transactions cto
+        ON cto.ACCOUNT_NUMBER = acc.Account_number
+    WHERE
+        (acc.PRODUCT_LINE = 'ACCOUNTS' OR acc.PRODUCT_LINE IS NULL)
+        --AND cm.CLASSIFICATION IN ('A1', 'A2', 'A3', 'A4', 'A5', 'A6') ---have A1 to A6
+        AND acc.category NOT IN (
+            '1008', '1017', '1018', '1032', '1033', '1035', '1037', '1038', '1041', '1043', '1056', '1061', '1062', '1063', '1071',
+            '1072', '1073', '1074', '1077', '1078', '1079', '1084', '1085', '1094', '1095', '1096', '1097', '1099', '1102',
+            '1102', '1104', '1110', '1112', '1108', '1130', '1162', '1163', '1205', '1260', '1261', '1262', 
+            '1263', '1264', '1265', '1267', '1268', '1270', '1272', '1273', '1274', '1277', '1279', '1280', '1300', '1310',
+            '1322', '1330', '1340', '1433', '1434', '1436', '1438', '1452', '1454', '1456', '1458', '1601', '1805', '1810',
+            '1815', '1820', '1825', '1903', '1953', '1954', '1955', '1991', '2001', '3114', '3730', '3758', '5001', '6001',
+            '6003', '6015', '6020', '6021', '6025', '6041', '6054', '6055', '6056', '6058', '6062', '6200', '6212', '6501'
+        )
+        AND cm.EXTRACTION_DATE = (SELECT MAX(EXTRACTION_DATE) FROM dbcba.ke_Customer_master)
+        AND cm.BUSINESS_SEGMENT IN ('270', '250')
+        --AND acc.CURRENCY = 'KES'
+        
+),
+turnovers AS 
+(
+SELECT 
+    CUSTOMER,
+    LEGAL_IDNO,
+    ACCOUNT_NUMBER,
+    SUM(CASE WHEN DATENAME(MONTH, BOOKING_DATE) = DATENAME(MONTH, DATEADD(MONTH, -1, GETDATE())) THEN AMOUNT_LCY ELSE 0 END) AS [Month_1_CTO],
+    SUM(CASE WHEN DATENAME(MONTH, BOOKING_DATE) = DATENAME(MONTH, DATEADD(MONTH, -2, GETDATE())) THEN AMOUNT_LCY ELSE 0 END) AS [Month_2_CTO],
+    SUM(CASE WHEN DATENAME(MONTH, BOOKING_DATE) = DATENAME(MONTH, DATEADD(MONTH, -3, GETDATE())) THEN AMOUNT_LCY ELSE 0 END) AS [Month_3_CTO],
+    SUM(CASE WHEN DATENAME(MONTH, BOOKING_DATE) = DATENAME(MONTH, DATEADD(MONTH, -4, GETDATE())) THEN AMOUNT_LCY ELSE 0 END) AS [Month_4_CTO],
+    SUM(CASE WHEN DATENAME(MONTH, BOOKING_DATE) = DATENAME(MONTH, DATEADD(MONTH, -5, GETDATE())) THEN AMOUNT_LCY ELSE 0 END) AS [Month_5_CTO],
+    SUM(CASE WHEN DATENAME(MONTH, BOOKING_DATE) = DATENAME(MONTH, DATEADD(MONTH, -6, GETDATE())) THEN AMOUNT_LCY ELSE 0 END) AS [Month_6_CTO],
+    SUM(CASE WHEN DATENAME(MONTH, BOOKING_DATE) = DATENAME(MONTH, DATEADD(MONTH, -7, GETDATE())) THEN AMOUNT_LCY ELSE 0 END) AS [Month_7_CTO],
+    SUM(CASE WHEN DATENAME(MONTH, BOOKING_DATE) = DATENAME(MONTH, DATEADD(MONTH, -8, GETDATE())) THEN AMOUNT_LCY ELSE 0 END) AS [Month_8_CTO],
+    SUM(CASE WHEN DATENAME(MONTH, BOOKING_DATE) = DATENAME(MONTH, DATEADD(MONTH, -9, GETDATE())) THEN AMOUNT_LCY ELSE 0 END) AS [Month_9_CTO],
+    SUM(CASE WHEN DATENAME(MONTH, BOOKING_DATE) = DATENAME(MONTH, DATEADD(MONTH, -10, GETDATE())) THEN AMOUNT_LCY ELSE 0 END) AS [Month_10_CTO],
+    SUM(CASE WHEN DATENAME(MONTH, BOOKING_DATE) = DATENAME(MONTH, DATEADD(MONTH, -11, GETDATE())) THEN AMOUNT_LCY ELSE 0 END) AS [Month_11_CTO],
+    SUM(CASE WHEN DATENAME(MONTH, BOOKING_DATE) = DATENAME(MONTH, DATEADD(MONTH, -12, GETDATE())) THEN AMOUNT_LCY ELSE 0 END) AS [Month_12_CTO]
+    
+FROM 
+    account_transactions
+    
+GROUP BY 
+    CUSTOMER,
+    ACCOUNT_NUMBER,
+    LEGAL_IDNO),
+    
+rank_ctos AS 
+(    
+SELECT *,
+    CASE 
+        WHEN 
+            (CASE WHEN [Month_1_CTO] > 0 THEN 1 ELSE 0 END + 
+             CASE WHEN [Month_2_CTO] > 0 THEN 1 ELSE 0 END +
+             CASE WHEN [Month_3_CTO] > 0 THEN 1 ELSE 0 END +
+             CASE WHEN [Month_4_CTO] > 0 THEN 1 ELSE 0 END +
+             CASE WHEN [Month_5_CTO] > 0 THEN 1 ELSE 0 END +
+             CASE WHEN [Month_6_CTO] > 0 THEN 1 ELSE 0 END) > 4 
+            AND [Month_1_CTO] <> 0
+        THEN 'Y'
+        ELSE 'N'
+    END AS recency_check,
+    Month_1_CTO+Month_2_CTO+Month_3_CTO+Month_4_CTO+Month_5_CTO+Month_6_CTO+Month_7_CTO+Month_8_CTO+Month_9_CTO+Month_10_CTO+Month_11_CTO+Month_12_CTO AS total_CTO,
+     (Month_1_CTO+Month_2_CTO+Month_3_CTO+Month_4_CTO+Month_5_CTO+Month_6_CTO+Month_7_CTO+Month_8_CTO+Month_9_CTO+Month_10_CTO+Month_11_CTO+Month_12_CTO)/12 AS Avg_CTO
+   -- RANK() OVER(PARTITION BY CUSTOMER ORDER BY Month_1_CTO+Month_2_CTO+Month_3_CTO+Month_4_CTO+Month_5_CTO+Month_6_CTO+Month_7_CTO+Month_8_CTO+Month_9_CTO+Month_10_CTO+Month_11_CTO+Month_12_CTO DESC,
+                       -- ACCOUNT_NUMBER ASC) AS CTO_rank
+FROM turnovers
+)
+SELECT * 
+FROM rank_ctos 
+WHERE CUSTOMER in ('588893',
+'722459')
+
+--CTO_rank = 1
+--AND recency_check = 'Y'
+;

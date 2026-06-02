@@ -1,0 +1,17 @@
+
+
+SELECT  CUSTOMER_NUMBER, CUS_SHORT_NAME,CUS_ACC_OFFICER,ACCOUNT_OFFICER_NAME,se.Email, cm.CUST_MOB_PHONE,cm.CUST_EMAIL_ID
+FROM 
+(select CUSTOMER_NUMBER, CUS_SHORT_NAME,CUS_ACC_OFFICER,ACCOUNT_OFFICER_NAME, 
+CUST_MOB_PHONE,CUST_EMAIL_ID from dbcba.KE_Customer_Master WHERE EXTRACTION_DATE=(select max(EXTRACTION_DATE) from  dbcba.KE_Customer_Master))  cm 
+left join dbcba.STAFF_DAO_MASTER se on se.DAO_Code = cm.CUS_ACC_OFFICER
+---where ACCOUNT_OFFICER_NAME LIKE '%CHACHA%'
+
+
+select Staff_Name, DAO_Code
+from
+dbcba.STAFF_DAO_MASTER 
+ where upper(Staff_Name) LIKE '%OYOSI%'
+ 
+ 
+ 

@@ -1,0 +1,54 @@
+---MAX_DPD_DAYS, MAX_OD_DAYS, MAX_LOAN_DPD
+WITH od_dpd_max AS (
+    SELECT
+        OD.[CUSTOMER NO] AS CUSTOMER,
+        COALESCE(MAX(OD.[EXCESS DAYS]), 0) AS max_od_days
+    FROM
+        --STGKE.STG_AA_DAYS_EXCESS_BKP OD
+        STGKE.STG_AA_DAYS_EXCESS OD
+    INNER JOIN DBCBA.KE_ACCOUNTS_MASTER ACC ON
+        OD.[ACCOUNT NUMBER] = ACC.ACCOUNT_NUMBER
+    LEFT JOIN DBCBA.KE_CUSTOMER_MASTER CM ON 
+        CM.CUSTOMER_NUMBER = OD.[CUSTOMER NO]
+    WHERE 
+        OD.EXTRACTION_DATE BETWEEN DATEADD(DAY, -30, GETDATE()-1) AND GETDATE()-1
+        AND ACC.EXTRACTION_DATE = (SELECT MAX(EXTRACTION_DATE) FROM DBCBA.KE_ACCOUNTS_MASTER)
+        AND CM.EXTRACTION_DATE = (SELECT MAX(EXTRACTION_DATE) FROM DBCBA.KE_CUSTOMER_MASTER)
+        AND OD.[CUSTOMER NO] <> ''
+        AND CM.CLASSIFICATION IN ('A1', 'A2', 'A3', 'A4', 'A5', 'A6') 
+        AND ACC.PRODUCT_LINE = 'ACCOUNTS' 
+        --AND OD.[CUSTOMER NO] IN ('687488')
+    GROUP BY 
+        OD.[CUSTOMER NO]
+),
+loan_dpd_max AS (
+    SELECT
+        BIL.CUSTOMER AS CUSTOMER,
+        COALESCE(MAX(BIL.OD_DAYS), 0) AS max_loan_dpd
+    FROM
+        STGKE.STG_AA_BILL_ARREARS BIL
+    LEFT JOIN DBCBA.KE_CUSTOMER_MASTER CM ON 
+        CM.CUSTOMER_NUMBER = BIL.CUSTOMER
+    WHERE 
+        BIL.EXTRACTION_DATE BETWEEN DATEADD(DAY, -60, GETDATE()-1) AND GETDATE()-1
+        AND CM.EXTRACTION_DATE = (select PROCESSING_DATE   from dbcba.end_of_day WHERE LATEST_RECORD = 'Y')--(SELECT MAX(EXTRACTION_DATE) FROM DBCBA.KE_CUSTOMER_MASTER)
+        AND BIL.CUSTOMER <> ''
+        AND CM.CLASSIFICATION IN ('A1', 'A2', 'A3', 'A4', 'A5', 'A6') 
+        AND CM.BUSINESS_SEGMENT IN ('270', '250', '200', '260')
+        AND (BIL.OD_DAYS IS NOT NULL)
+    GROUP BY 
+        BIL.CUSTOMER
+)
+SELECT 
+    COALESCE(od_dpd_max.CUSTOMER, loan_dpd_max.CUSTOMER) AS CUSTOMER,
+    od_dpd_max.max_od_days,
+    loan_dpd_max.max_loan_dpd,
+    -- Use COALESCE within the CASE statement to ensure no NULL values in MAX_DAYS
+    CASE 
+        WHEN COALESCE(od_dpd_max.max_od_days, 0) >= COALESCE(loan_dpd_max.max_loan_dpd, 0) THEN COALESCE(od_dpd_max.max_od_days, 0)
+        ELSE COALESCE(loan_dpd_max.max_loan_dpd, 0)
+    END AS max_dpd
+FROM 
+    od_dpd_max
+FULL OUTER JOIN loan_dpd_max
+    ON loan_dpd_max.CUSTOMER = od_dpd_max.CUSTOMER

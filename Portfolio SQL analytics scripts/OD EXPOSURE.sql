@@ -1,0 +1,86 @@
+WITH OD_EXPOSURE AS 
+(
+    SELECT 
+        sl.RECID AS LIMIT_ID,
+        sa.ACCOUNT_TITLE_1,
+        sl.ACCOUNT,
+        sa.CUSTOMER,
+        sa.ARRANGEMENT_ID,
+        sl.LIMIT_CURRENCY,  
+        sl.LIMIT_PRODUCT,
+        sl.INTERNAL_AMOUNT,
+        al.ONLINE_ACTUAL_BAL as OD_CURRENT_ACTUAL_EXPOSURE,
+        CAST(sl.ONLINE_LIMIT_DATE AS DATE) AS ONLINE_LIMIT_DATE, -- added alias
+        CAST(EXPIRY_DATE AS DATE) AS EXPIRY_DATE, -- added alias
+        CASE 
+            WHEN sl.LIMIT_CURRENCY = 'KES' THEN 
+                CASE 
+                    WHEN al.ONLINE_ACTUAL_BAL < 0 THEN al.ONLINE_ACTUAL_BAL * -1 
+                    ELSE al.ONLINE_ACTUAL_BAL 
+                END
+            ELSE 
+                CASE 
+                    WHEN al.ONLINE_ACTUAL_BAL * CAST(ex.[EXCHANGE RATE] AS DECIMAL(18,2)) < 0 THEN 
+                        CAST(al.ONLINE_ACTUAL_BAL AS DECIMAL(18,2)) * CAST(ex.[EXCHANGE RATE] AS DECIMAL(18,2)) * -1 
+                    ELSE 
+                        CAST(al.ONLINE_ACTUAL_BAL AS DECIMAL(18,2)) * CAST(ex.[EXCHANGE RATE] AS DECIMAL(18,2))
+                END 
+        END AS OD_CURRENT_ACTUAL_BAL_KES,
+        CASE 
+            WHEN sl.LIMIT_CURRENCY = 'KES' THEN cast(sl.ONLINE_LIMIT AS DECIMAL(18,2))
+            ELSE  cast(sl.ONLINE_LIMIT AS DECIMAL(18,2)) * CAST(ex.[EXCHANGE RATE] AS DECIMAL(18,2)) 
+        END AS ONLINE_LIMIT_KES,
+        CASE 
+            WHEN CAST(EXPIRY_DATE AS DATE) <= CURRENT TIMESTAMP THEN 'EXPIRED'
+            ELSE 'ACTIVE'
+        END AS STATUS,
+        CASE 
+            WHEN CAST(EXPIRY_DATE AS DATE) > CURRENT TIMESTAMP THEN 
+                CAST(DATEDIFF(MONTH, CURRENT TIMESTAMP, CAST(EXPIRY_DATE AS DATE)) AS VARCHAR)
+            ELSE 'EXPIRED'
+        END AS MONTHS_TO_EXPIRY,
+        CASE 
+            WHEN cm.BUSINESS_SEGMENT IN ('270','250') THEN 'CONSUMER BANKING'
+            WHEN cm.BUSINESS_SEGMENT IN ('200') THEN 'COMMERCIAL & BUSINESS BANKING'
+        END AS BUSINESS_UNIT,
+        cm.SUB_SEGEMENT_DESC,
+        cm.CUSTOMER_BRANCH_NAME,
+        cm.ACCOUNT_OFFICER_NAME,
+        sl.APPROVAL_DATE,
+        sl.REVIEW_FREQUENCY,
+        sl.ONLINE_LIMIT,
+        sl.AVAIL_AMT AS AVAILABLE_AMT
+    FROM 
+        STGKE.STG_LIMIT sl 
+    LEFT JOIN 
+        STGKE.STG_ACCOUNT sa ON sa.RECID = sl.ACCOUNT
+    LEFT JOIN 
+        STGKE.STG_AA_ARR_INTEREST saai ON saai.ID_COMP_1 = sa.ARRANGEMENT_ID
+    LEFT JOIN 
+        dbcba.KE_Accounts_List al on al.ACCOUNT_NUMBER = sl.ACCOUNT 
+    LEFT JOIN 
+        (SELECT RECID AS CURRENCY,
+                CASE 
+                    WHEN RECID = 'KES' THEN '1'
+                    ELSE MID_REVAL_RATE
+                END AS [EXCHANGE RATE]
+         FROM STGKE.STG_CURRENCY ) AS ex on ex.CURRENCY = sl.LIMIT_CURRENCY 
+    LEFT JOIN
+        dbcba.KE_Customer_Master cm ON sa.CUSTOMER = cm.CUSTOMER_NUMBER 
+        AND cm.EXTRACTION_DATE = (SELECT MAX(processing_date) FROM dbcba.end_of_day)
+    WHERE
+        sl.LIMIT_PRODUCT = '100'
+        AND sl.EXPIRY_DATE IS NOT NULL 
+        AND sl.EXPIRY_DATE <> '' 
+        AND sl.ACCOUNT <> '' 
+        AND sl.ACCOUNT IS NOT NULL
+        AND al.ONLINE_ACTUAL_BAL < 0
+        AND cm.BUSINESS_SEGMENT IN ('270','250','200')      
+)
+SELECT CUSTOMER,ACCOUNT,
+case
+	when OD_CURRENT_ACTUAL_BAL_KES>ONLINE_LIMIT_KES then ONLINE_LIMIT_KES
+	else OD_CURRENT_ACTUAL_BAL_KES
+end as OD_CURRENT_ACTUAL_EXPOSURE_KES
+FROM OD_EXPOSURE
+

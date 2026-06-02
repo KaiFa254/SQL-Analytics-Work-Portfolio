@@ -1,0 +1,42 @@
+WITH SnapshotDates AS (
+    SELECT DISTINCT EXTRACTION_DATE AS SNAPSHOT_DATE
+    FROM dbcba.KE_Accounts_Master
+    WHERE EXTRACTION_DATE IN (
+        '2025-06-30','2025-07-31','2025-08-31',
+        '2025-09-30','2025-10-31','2025-11-30'
+    )
+),
+                   
+FilteredCustomers AS (
+    SELECT am.CUSTOMER
+    FROM dbcba.KE_Accounts_List am
+    LEFT JOIN dbcba.KE_Customer_Master cm
+        ON cm.CUSTOMER_NUMBER = am.CUSTOMER
+    WHERE am.PRODUCT_LINE='LENDING'
+      AND am.ARR_STATUS='CURRENT'
+      AND cm.BUSINESS_SEGMENT IN ('270','250')
+      AND COALESCE(am.ONLINE_ACTUAL_BAL,0) < 0
+      AND am.CUSTOMER IS NOT NULL
+),
+LatestPPC AS (
+    SELECT
+        p.CUSTOMER,
+        s.SNAPSHOT_DATE,
+        MAX(p.LOAD_DATE) AS MAX_LOAD_DATE
+    FROM dbcba.RETAIL_PPC p
+    JOIN SnapshotDates s
+      ON p.LOAD_DATE <= s.SNAPSHOT_DATE
+    AND p.CUSTOMER IN (SELECT CUSTOMER FROM FilteredCustomers)
+    GROUP BY p.CUSTOMER, s.SNAPSHOT_DATE
+)
+SELECT
+    s.SNAPSHOT_DATE,
+    l.CUSTOMER AS CUSTOMER_ID,
+    r.PPC
+FROM SnapshotDates s
+LEFT JOIN LatestPPC l
+       ON s.SNAPSHOT_DATE = l.SNAPSHOT_DATE
+LEFT JOIN dbcba.RETAIL_PPC r
+       ON r.CUSTOMER = l.CUSTOMER
+      AND r.LOAD_DATE = l.MAX_LOAD_DATE
+ORDER BY s.SNAPSHOT_DATE, l.CUSTOMER;
