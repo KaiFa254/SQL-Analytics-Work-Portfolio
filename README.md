@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="screenshots\SQL PORTFOLIO THUMBNAIL.png" alt="SQL Analytics Portfolio Banner" width="100%" height="400">
+  <img src="screenshots/SQL PORTFOLIO THUMBNAIL.png" alt="SQL Analytics Portfolio Banner" width="100%" height="400">
 </p>
 
 # SQL Analytics Portfolio
@@ -158,7 +158,7 @@ SQL-Analytics-Portfolio/
 
 ---
 
-## 🌍 Open to Remote Opportunities
+## 🌍 Open to Opportunities
 
 I am passionate about using data to drive business decisions and continuously expanding my expertise in analytics, data science, business intelligence, and AI-driven solutions.
 
