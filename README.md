@@ -162,16 +162,3 @@ This portfolio represents practical SQL applications used to solve real-world an
 
 ---
 
-## 📫 Connect With Me
-
-**Erastus Kaiba Njuguna**
-
-📧 Email: erastusnjuguna24@gmail.com
-
-🔗 LinkedIn: linkedin.com/in/ekaiba
-
-💻 GitHub: https://github.com/KaiFa254
-
----
-
-⭐ If you find this repository useful, feel free to star it.
