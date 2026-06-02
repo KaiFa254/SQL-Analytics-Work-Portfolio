@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="screenshots/SQL_PORTFOLIO_THUMBNAIL.png" alt="SQL Analytics Portfolio Banner" width="100%" height="400">
-</p>
-
 # SQL Analytics Portfolio
 
 ## 👋 About Me
